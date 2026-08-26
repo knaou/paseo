@@ -147,9 +147,15 @@ Kimi Code usage follows the CLI-managed credential file at `KIMI_CODE_HOME` or `
 
 Cursor usage reads the desktop `state.vscdb` token first, then `cursor-agent`'s `~/.config/cursor/auth.json`. Headless hosts only have the CLI file.
 
+### Junie monthly credits
+
+Junie's standalone endpoint returns a remaining balance, not its monthly allocation or reset date. Set `JUNIE_MONTHLY_CREDITS` to the displayed monthly AI Credits allocation to enable the generic usage bar. Set `JUNIE_MONTHLY_CREDITS_RESET_DAY` to a day from `1` through `31` to show the next reset at the daemon's local midnight; a day beyond the end of a month uses that month's last day. Configure these only when they match your JetBrains plan.
+
 ### Usage fetchers are read-only on credentials
 
 A fetcher reads the provider's credential file and never writes it. On a 401 or 403 it returns `unavailable` and leaves refresh to the provider's own CLI: redeeming a refresh token in the fetcher invalidates the CLI's copy (refresh tokens are single-use), and rewriting the file through the fetcher's Zod schema drops any field the schema does not model, corrupting the file for the CLI.
+
+Junie is the one exception. Its CLI reuses one multi-use refresh token from `secure_credentials.json` without ever rewriting the file — the same on-disk token authenticates every CLI start — so the Junie fetcher redeems it in memory when the stored access token is expired and discards the rotated refresh token from the response. Nothing is written back, and the CLI's copy keeps working.
 
 ---
 

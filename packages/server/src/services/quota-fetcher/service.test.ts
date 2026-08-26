@@ -841,6 +841,35 @@ describe("real provider usage fetchers", () => {
     fetchApi = mockFetch(
       new Map([
         [
+          "https://api.z.ai/api/monitor/usage/quota/limit",
+          () =>
+            jsonResponse({
+              success: true,
+              data: {
+                limits: [
+                  {
+                    type: "CREDIT_LIMIT",
+                    unit: 3,
+                    percentage: 15,
+                    nextResetTime: 1_800_000_000_000,
+                  },
+                  {
+                    type: "TOKENS_LIMIT",
+                    unit: 6,
+                    percentage: 40,
+                    nextResetTime: 1_800_100_000_000,
+                  },
+                  {
+                    type: "TIME_LIMIT",
+                    usage: 4_000,
+                    currentValue: 1_828,
+                    nextResetTime: 1_800_200_000_000,
+                  },
+                ],
+              },
+            }),
+        ],
+        [
           "https://api.z.ai/api/biz/subscription/list",
           () =>
             jsonResponse({
@@ -862,8 +891,89 @@ describe("real provider usage fetchers", () => {
     expect(zai).toMatchObject({
       status: "available",
       planLabel: "GLM Coding Max",
+      windows: [
+        {
+          id: "session",
+          label: "Session",
+          usedPct: 15,
+          remainingPct: 85,
+          resetsAt: new Date(1_800_000_000_000).toISOString(),
+          tone: "ok",
+        },
+        {
+          id: "weekly",
+          label: "Weekly",
+          usedPct: 40,
+          remainingPct: 60,
+          resetsAt: new Date(1_800_100_000_000).toISOString(),
+          tone: "ok",
+        },
+      ],
+      balances: [
+        {
+          id: "web_search",
+          label: "Web Search",
+          used: 1_828,
+          remaining: 2_172,
+          limit: 4_000,
+          unit: "requests",
+          resetsAt: new Date(1_800_200_000_000).toISOString(),
+          tone: "ok",
+        },
+      ],
       details: expect.arrayContaining([{ id: "status", label: "Status", value: "VALID" }]),
     });
+  });
+
+  it("keeps Z.ai limits when subscription metadata is unavailable", async () => {
+    process.env["ZAI_API_KEY"] = "zai_test_token";
+    fetchApi = mockFetch(
+      new Map([
+        [
+          "https://api.z.ai/api/monitor/usage/quota/limit",
+          () =>
+            jsonResponse({
+              success: true,
+              data: {
+                limits: [{ type: "CREDIT_LIMIT", unit: 3, percentage: 0 }],
+              },
+            }),
+        ],
+        ["https://api.z.ai/api/biz/subscription/list", () => jsonResponse({}, 500)],
+      ]),
+    );
+
+    const zai = findProvider(await service().listUsage(), "zai");
+
+    expect(zai).toMatchObject({
+      status: "available",
+      planLabel: null,
+      windows: [
+        {
+          id: "session",
+          label: "Session",
+          usedPct: 0,
+          remainingPct: 100,
+        },
+      ],
+    });
+  });
+
+  it("marks Z.ai unavailable when its quota API rejects the key", async () => {
+    process.env["ZAI_API_KEY"] = "zai_test_token";
+    fetchApi = mockFetch(
+      new Map([
+        [
+          "https://api.z.ai/api/monitor/usage/quota/limit",
+          () => jsonResponse({ success: false, msg: "No active coding plan" }),
+        ],
+        ["https://api.z.ai/api/biz/subscription/list", () => jsonResponse({ data: [] })],
+      ]),
+    );
+
+    const zai = findProvider(await service().listUsage(), "zai");
+
+    expect(zai).toMatchObject({ status: "unavailable", windows: [], balances: [] });
   });
 
   it("fetches Grok usage and preserves zero values", async () => {
