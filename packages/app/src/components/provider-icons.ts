@@ -26,6 +26,7 @@ const BUILTIN_PROVIDER_ICONS: Record<string, ProviderIconComponent> = {
   minimax: MiniMaxIcon as unknown as ProviderIconComponent,
   omp: OmpIcon as unknown as ProviderIconComponent,
   opencode: OpenCodeIcon as unknown as ProviderIconComponent,
+  "opencode-go": OpenCodeIcon as unknown as ProviderIconComponent,
   pi: PiIcon as unknown as ProviderIconComponent,
 };
 

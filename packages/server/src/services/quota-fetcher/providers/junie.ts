@@ -191,17 +191,13 @@ export class JunieQuotaProvider implements ProviderUsageFetcher {
         unit === "credits" ? aiCreditsFromRawBalance(usage.balanceLeft) : usage.balanceLeft;
       const monthlyCredits = unit === "credits" ? configuredMonthlyCredits(this.env) : null;
       const used = monthlyCredits === null ? null : Math.max(0, monthlyCredits - remaining);
-      const resetDay = monthlyCredits === null ? null : configuredMonthlyResetDay(this.env);
+      const resetDay = configuredMonthlyResetDay(this.env);
+      const resetsAt = resetDay === null ? null : nextMonthlyResetAt(resetDay, this.now());
       balances.push({
         id: "balance",
         label: unit === "credits" ? "AI Credits" : "Balance",
-        ...(monthlyCredits === null
-          ? {}
-          : {
-              used,
-              limit: monthlyCredits,
-              resetsAt: resetDay === null ? null : nextMonthlyResetAt(resetDay, this.now()),
-            }),
+        ...(monthlyCredits === null ? {} : { used, limit: monthlyCredits }),
+        ...(resetsAt === null ? {} : { resetsAt }),
         remaining,
         unit,
         tone:

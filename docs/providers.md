@@ -149,7 +149,13 @@ Cursor usage reads the desktop `state.vscdb` token first, then `cursor-agent`'s 
 
 ### Junie monthly credits
 
-Junie's standalone endpoint returns a remaining balance, not its monthly allocation or reset date. Set `JUNIE_MONTHLY_CREDITS` to the displayed monthly AI Credits allocation to enable the generic usage bar. Set `JUNIE_MONTHLY_CREDITS_RESET_DAY` to a day from `1` through `31` to show the next reset at the daemon's local midnight; a day beyond the end of a month uses that month's last day. Configure these only when they match your JetBrains plan.
+Junie's `/auth/test` endpoint returns only a remaining balance — no allocation and no reset date. The monthly AI credit quota resets on a fixed 30-day cycle from the license activation date, which the API does not expose, so Paseo cannot derive it.
+
+Set `JUNIE_MONTHLY_CREDITS` to your displayed monthly AI Credits allocation to enable the usage bar (used / limit). Set `JUNIE_MONTHLY_CREDITS_RESET_DAY` to a day from `1` through `31` to show the next reset at the daemon's local midnight; a day beyond the end of a month uses that month's last day. The reset day applies on its own — set it without `JUNIE_MONTHLY_CREDITS` to show "resets <date>" on the balance with no bar. Configure these only when they match your JetBrains plan.
+
+### OpenCode Go usage
+
+OpenCode Go is the $10/month subscription from OpenCode that ships open coding models behind a single API key. Its usage endpoint reports three dollar-value windows: a rolling 5-hour limit, a weekly limit, and a monthly limit. The fetcher reads the API key the OpenCode `/connect` command stored in `$XDG_DATA_HOME/opencode/auth.json` (or `~/.local/share/opencode/auth.json`) under the `opencode-go` provider entry, or `OPENCODE_GO_API_KEY` when set. A 403 means the key has no Go subscription; both 401 and 403 return `unavailable` and leave the credential file untouched.
 
 ### Usage fetchers are read-only on credentials
 

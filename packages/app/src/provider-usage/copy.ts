@@ -15,4 +15,5 @@ export const providerUsageCopy = {
   clientUnavailable: "Host connection is not ready",
   retry: "Try again",
   tooltipLoading: "Loading plan usage…",
+  unavailableSummary: (names: string[]) => `${names.join(", ")} unavailable`,
 } as const;

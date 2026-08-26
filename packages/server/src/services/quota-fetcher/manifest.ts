@@ -11,6 +11,7 @@ import { GrokQuotaProvider } from "./providers/grok.js";
 import { JunieQuotaProvider } from "./providers/junie.js";
 import { KimiQuotaProvider } from "./providers/kimi.js";
 import { MiniMaxQuotaProvider } from "./providers/minimax.js";
+import { OpenCodeGoQuotaProvider } from "./providers/opencode-go.js";
 import { ZaiQuotaProvider } from "./providers/zai.js";
 
 export const PROVIDER_USAGE_FETCHERS: readonly ProviderUsageFetcherManifestEntry[] = [
@@ -57,6 +58,11 @@ export const PROVIDER_USAGE_FETCHERS: readonly ProviderUsageFetcherManifestEntry
   {
     providerId: "minimax",
     create: (options) => new MiniMaxQuotaProvider({ logger: options.logger, fetch: options.fetch }),
+  },
+  {
+    providerId: "opencode-go",
+    create: (options) =>
+      new OpenCodeGoQuotaProvider({ logger: options.logger, fetch: options.fetch }),
   },
 ];
 

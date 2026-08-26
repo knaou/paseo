@@ -157,6 +157,37 @@ describe("JunieQuotaProvider", () => {
     });
   });
 
+  it("shows the next reset from JUNIE_MONTHLY_CREDITS_RESET_DAY without a credit limit", async () => {
+    const now = new Date(2026, 7, 26, 12);
+    const provider = new JunieQuotaProvider({
+      logger: createLogger(),
+      fetch: async () =>
+        jsonResponse({
+          active: true,
+          balanceLeft: 120_000,
+          balanceUnit: "CREDITS",
+        }),
+      env: {
+        JUNIE_API_KEY: "perm_test",
+        JUNIE_MONTHLY_CREDITS_RESET_DAY: "1",
+      },
+      now: () => now,
+    });
+
+    const usage = await provider.fetchUsage();
+    expect(usage.balances).toHaveLength(1);
+    expect(usage.balances[0]).toMatchObject({
+      id: "balance",
+      label: "AI Credits",
+      remaining: 1.2,
+      unit: "credits",
+      resetsAt: new Date(2026, 8, 1).toISOString(),
+      tone: "ok",
+    });
+    expect(usage.balances[0]).not.toHaveProperty("used");
+    expect(usage.balances[0]).not.toHaveProperty("limit");
+  });
+
   it("redeems the stored multi-use refresh token when the access token is expired", async () => {
     const credentialsDir = mkdtempSync(join(tmpdir(), "junie-credentials-"));
     const originalAccount = {
