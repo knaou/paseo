@@ -15,6 +15,11 @@ function toVersionOrNull(value: unknown): string | null {
 }
 
 export function resolveAppVersion(): string | null {
+  const privateBuildVersion = toVersionOrNull(process.env.EXPO_PUBLIC_PASEO_APP_VERSION);
+  if (privateBuildVersion) {
+    return privateBuildVersion;
+  }
+
   const packageVersion = toVersionOrNull(appPackage?.version);
   if (packageVersion) {
     return packageVersion;

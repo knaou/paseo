@@ -17,6 +17,7 @@ export interface DaemonSelfUpdateResult {
 export interface DaemonSelfUpdateInput {
   daemonVersion: string | null;
   desktopManaged: boolean;
+  privateNpmDistribution?: boolean;
   onProgress: (phase: DaemonSelfUpdatePhase) => void;
   logger: DaemonSelfUpdateLogger;
 }
@@ -45,6 +46,8 @@ const defaultRuntime: DaemonSelfUpdateRuntime = {
 
 const DESKTOP_MANAGED_UPDATE_ERROR =
   "This daemon is managed by Paseo Desktop. Update Paseo Desktop on the host.";
+const PRIVATE_NPM_UPDATE_ERROR =
+  "This daemon was installed from a private npm distribution. Install the desired version manually.";
 
 export class DaemonSelfUpdater {
   private inProgress = false;
@@ -54,6 +57,10 @@ export class DaemonSelfUpdater {
   async update(input: DaemonSelfUpdateInput): Promise<DaemonSelfUpdateResult> {
     if (input.desktopManaged) {
       return { success: false, error: DESKTOP_MANAGED_UPDATE_ERROR, newVersion: null };
+    }
+
+    if (input.privateNpmDistribution) {
+      return { success: false, error: PRIVATE_NPM_UPDATE_ERROR, newVersion: null };
     }
 
     if (this.inProgress) {

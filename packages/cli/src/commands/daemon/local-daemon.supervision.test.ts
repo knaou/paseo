@@ -7,6 +7,7 @@ import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
 import {
   type DaemonLaunchRuntime,
   type DetachedDaemonProcess,
+  resolveDaemonRunnerEntryFromServerExport,
   resolveLocalDaemonState,
   startLocalDaemonDetached,
   startLocalDaemonForeground,
@@ -190,6 +191,24 @@ describe("local daemon launch supervision", () => {
     expect(launch?.mode).toBe("foreground");
     expect(launch?.args).toContain("--no-web-ui");
     expect(launch?.options?.env?.PASEO_WEB_UI_ENABLED).toBe("false");
+  });
+
+  test("resolves the daemon runner from the private server package metadata", async () => {
+    const root = await mkdtemp(path.join(os.tmpdir(), "paseo-private-server-"));
+    tempRoots.push(root);
+    const packageRoot = path.join(root, "node_modules", "@getpaseo", "server");
+    const runner = path.join(packageRoot, "dist", "scripts", "supervisor-entrypoint.js");
+    const serverExport = path.join(packageRoot, "dist", "server", "server", "exports.js");
+
+    await mkdir(path.dirname(runner), { recursive: true });
+    await mkdir(path.dirname(serverExport), { recursive: true });
+    await writeFile(
+      path.join(packageRoot, "package.json"),
+      JSON.stringify({ name: "@knaou/paseo-server", version: "0.5.2-knaou.1" }),
+    );
+    await writeFile(runner, "");
+
+    expect(resolveDaemonRunnerEntryFromServerExport(serverExport)).toBe(runner);
   });
 
   test("local daemon state keeps public relay TLS separate from daemon relay TLS", async () => {

@@ -18,6 +18,7 @@ export interface DaemonRuntimeConfig {
   worktreesRoot?: string;
   appBaseUrl?: string;
   desktopManaged?: boolean;
+  privateNpmDistribution?: boolean;
   getRelayConfig(): {
     enabled: boolean;
     endpoint: string;
@@ -97,6 +98,7 @@ export class DaemonSession {
       clientId: this.clientId,
       daemonVersion: this.daemonVersion ?? null,
       desktopManaged: this.daemonRuntimeConfig?.desktopManaged === true,
+      privateNpmDistribution: this.daemonRuntimeConfig?.privateNpmDistribution === true,
       emit: (msg) => this.host.emit(msg),
       emitLifecycleIntent: (intent) => this.host.emitLifecycleIntent(intent),
       sessionLogger: this.logger,

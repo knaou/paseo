@@ -25,6 +25,7 @@ export interface DaemonSelfUpdateSessionControllerOptions {
   clientId: string;
   daemonVersion: string | null;
   desktopManaged?: boolean;
+  privateNpmDistribution?: boolean;
   emit: (msg: SessionOutboundMessage) => void;
   emitLifecycleIntent: (intent: DaemonSelfUpdateRestartIntent) => void;
   sessionLogger: pino.Logger;
@@ -39,6 +40,7 @@ export class DaemonSelfUpdateSessionController {
   private readonly clientId: string;
   private readonly daemonVersion: string | null;
   private readonly desktopManaged: boolean;
+  private readonly privateNpmDistribution: boolean;
   private readonly emit: (msg: SessionOutboundMessage) => void;
   private readonly emitLifecycleIntent: (intent: DaemonSelfUpdateRestartIntent) => void;
   private readonly sessionLogger: pino.Logger;
@@ -48,6 +50,7 @@ export class DaemonSelfUpdateSessionController {
     this.clientId = options.clientId;
     this.daemonVersion = options.daemonVersion;
     this.desktopManaged = options.desktopManaged === true;
+    this.privateNpmDistribution = options.privateNpmDistribution === true;
     this.emit = options.emit;
     this.emitLifecycleIntent = options.emitLifecycleIntent;
     this.sessionLogger = options.sessionLogger;
@@ -68,6 +71,7 @@ export class DaemonSelfUpdateSessionController {
       const result = await this.updater.update({
         daemonVersion: previousVersion,
         desktopManaged: this.desktopManaged,
+        privateNpmDistribution: this.privateNpmDistribution,
         onProgress: (phase) => this.emitProgress(msg.requestId, phase),
         logger: this.sessionLogger,
       });

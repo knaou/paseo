@@ -85,6 +85,7 @@ async function runUpdate(input: {
   runtime: DaemonSelfUpdateRuntime;
   daemonVersion?: string | null;
   desktopManaged?: boolean;
+  privateNpmDistribution?: boolean;
   phases?: DaemonSelfUpdatePhase[];
 }) {
   const logger = createLogger();
@@ -93,6 +94,7 @@ async function runUpdate(input: {
   const result = await updater.update({
     daemonVersion: input.daemonVersion ?? "0.1.15",
     desktopManaged: input.desktopManaged ?? false,
+    privateNpmDistribution: input.privateNpmDistribution,
     onProgress: (phase) => phases.push(phase),
     logger,
   });
@@ -109,6 +111,22 @@ describe("DaemonSelfUpdater", () => {
     expect(result).toEqual({
       success: false,
       error: "This daemon is managed by Paseo Desktop. Update Paseo Desktop on the host.",
+      newVersion: null,
+    });
+    expect(phases).toEqual([]);
+    expect(calls).toEqual([]);
+  });
+
+  test("refuses a private npm distribution without touching npm", async () => {
+    const calls: RuntimeCall[] = [];
+    const runtime = createRuntime({ calls, inspections: [] });
+
+    const { result, phases } = await runUpdate({ runtime, privateNpmDistribution: true });
+
+    expect(result).toEqual({
+      success: false,
+      error:
+        "This daemon was installed from a private npm distribution. Install the desired version manually.",
       newVersion: null,
     });
     expect(phases).toEqual([]);

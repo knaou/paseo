@@ -59,6 +59,8 @@ function globalNodeModulesPath(globalRootPath: string): string {
 }
 
 function resolveCurrentServerPackageRoot(): string | null {
+  // Private npm aliases retain their custom package metadata. Do not recognize
+  // them here: self-update installs @getpaseo/cli@latest and must fail closed.
   return resolvePackageRootFrom(fileURLToPath(import.meta.url), "@getpaseo/server");
 }
 

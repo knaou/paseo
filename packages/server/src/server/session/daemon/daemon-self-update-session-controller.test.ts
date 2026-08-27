@@ -24,6 +24,7 @@ function createController(input: {
   updater: TestUpdater;
   daemonVersion?: string | null;
   desktopManaged?: boolean;
+  privateNpmDistribution?: boolean;
 }): ControllerHarness {
   const emitted: SessionOutboundMessage[] = [];
   const restartIntents: RestartIntent[] = [];
@@ -31,6 +32,7 @@ function createController(input: {
     clientId: "client-1",
     daemonVersion: input.daemonVersion ?? "0.1.15",
     desktopManaged: input.desktopManaged,
+    privateNpmDistribution: input.privateNpmDistribution,
     emit: (msg) => {
       emitted.push(msg);
     },
@@ -85,6 +87,7 @@ describe("DaemonSelfUpdateSessionController", () => {
 
     expect(updateInput?.daemonVersion).toBe("0.1.15");
     expect(updateInput?.desktopManaged).toBe(false);
+    expect(updateInput?.privateNpmDistribution).toBe(false);
     expect(emitted).toEqual([
       {
         type: "daemon.update.progress",
@@ -150,6 +153,21 @@ describe("DaemonSelfUpdateSessionController", () => {
       },
     ]);
     expect(restartIntents).toEqual([]);
+  });
+
+  test("passes private npm distribution state to the updater", async () => {
+    let updateInput: DaemonSelfUpdateInput | null = null;
+    const updater: TestUpdater = {
+      async update(input) {
+        updateInput = input;
+        return { success: false, error: "manual update required", newVersion: null };
+      },
+    };
+    const { controller } = createController({ updater, privateNpmDistribution: true });
+
+    await controller.dispatch(updateRequest);
+
+    expect(updateInput?.privateNpmDistribution).toBe(true);
   });
 
   test("maps concurrent updates to rpc_error", async () => {

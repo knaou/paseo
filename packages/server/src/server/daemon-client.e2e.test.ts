@@ -1266,6 +1266,25 @@ test("a Desktop-managed daemon does not advertise npm self-update", async () => 
   }
 }, 15000);
 
+test("a private npm daemon does not advertise npm self-update", async () => {
+  const daemon = await createTestPaseoDaemon({ privateNpmDistribution: true });
+  const client = new DaemonClient({
+    url: `ws://127.0.0.1:${daemon.port}/ws`,
+    clientId: `cid-private-npm-${randomUUID()}`,
+    clientType: "cli",
+  });
+
+  try {
+    await client.connect();
+    const serverInfo = client.getLastServerInfoMessage();
+
+    expect(serverInfo?.features?.daemonSelfUpdate).toBe(false);
+  } finally {
+    await client.close();
+    await daemon.close();
+  }
+}, 15000);
+
 test("emits disabled voice capability reasons on fresh daemon startup", async () => {
   const isolatedCtx = await createDaemonTestContext({
     speech: {

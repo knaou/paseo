@@ -98,6 +98,7 @@ const DETACHED_STARTUP_GRACE_MS = 1200;
 const PID_POLL_INTERVAL_MS = 100;
 const DAEMON_LOG_FILENAME = "daemon.log";
 const DAEMON_PID_FILENAME = "paseo.pid";
+const SERVER_PACKAGE_NAMES = new Set(["@getpaseo/server", "@knaou/paseo-server"]);
 
 export const DEFAULT_STOP_TIMEOUT_MS = 15_000;
 export const DEFAULT_KILL_TIMEOUT_MS = 3_000;
@@ -184,7 +185,7 @@ function resolveServerRunnerFromDir(currentDir: string): string | null {
   if (!existsSync(packageJsonPath)) return null;
   try {
     const packageJson = JSON.parse(readFileSync(packageJsonPath, "utf-8")) as { name?: string };
-    if (packageJson.name !== "@getpaseo/server") return null;
+    if (!SERVER_PACKAGE_NAMES.has(packageJson.name ?? "")) return null;
     const distRunner = path.join(currentDir, "dist", "scripts", "supervisor-entrypoint.js");
     if (existsSync(distRunner)) {
       return distRunner;
@@ -195,8 +196,7 @@ function resolveServerRunnerFromDir(currentDir: string): string | null {
   }
 }
 
-function resolveDaemonRunnerEntry(): string {
-  const serverExportPath = require.resolve("@getpaseo/server");
+export function resolveDaemonRunnerEntryFromServerExport(serverExportPath: string): string {
   let currentDir = path.dirname(serverExportPath);
 
   while (true) {
@@ -213,6 +213,10 @@ function resolveDaemonRunnerEntry(): string {
   }
 
   throw new Error("Unable to resolve @getpaseo/server package root for daemon runner");
+}
+
+function resolveDaemonRunnerEntry(): string {
+  return resolveDaemonRunnerEntryFromServerExport(require.resolve("@getpaseo/server"));
 }
 
 function pidFilePath(paseoHome: string): string {
