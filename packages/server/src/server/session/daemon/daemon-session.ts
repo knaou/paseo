@@ -50,6 +50,7 @@ export interface DaemonSessionOptions {
   listWorkspaces: () => Promise<PersistedWorkspaceRecord[]>;
   listProviderAvailability: () => Promise<ProviderAvailability[]>;
   getWebSocketRuntimeMetrics?: () => DaemonWebSocketRuntimeDiagnosticSnapshot | null;
+  getObservationMetrics?: () => Record<string, number>;
   logger: pino.Logger;
   hubRelationships?: HubRelationshipManagement;
   reloadConfig: () => DaemonConfigReloadResult;
@@ -74,6 +75,7 @@ export class DaemonSession {
   private readonly listWorkspaces: () => Promise<PersistedWorkspaceRecord[]>;
   private readonly listProviderAvailability: () => Promise<ProviderAvailability[]>;
   private readonly getWebSocketRuntimeMetrics: () => DaemonWebSocketRuntimeDiagnosticSnapshot | null;
+  private readonly getObservationMetrics: DaemonSessionOptions["getObservationMetrics"];
   private readonly logger: pino.Logger;
   private readonly selfUpdate: DaemonSelfUpdateSessionController;
   private readonly hubRelationships: HubRelationshipManagement | null;
@@ -91,6 +93,7 @@ export class DaemonSession {
     this.listWorkspaces = options.listWorkspaces;
     this.listProviderAvailability = options.listProviderAvailability;
     this.getWebSocketRuntimeMetrics = options.getWebSocketRuntimeMetrics ?? (() => null);
+    this.getObservationMetrics = options.getObservationMetrics;
     this.logger = options.logger;
     this.hubRelationships = options.hubRelationships ?? null;
     this.reloadConfig = options.reloadConfig;
@@ -112,7 +115,8 @@ export class DaemonSession {
         type:
           | "hub.management.daemon.connect.request"
           | "hub.management.daemon.get_status.request"
-          | "hub.management.daemon.disconnect.request";
+          | "hub.management.daemon.disconnect.request"
+          | "hub.management.daemon.permissions.update.request";
       }
     >,
   ): Promise<void> {
@@ -122,9 +126,21 @@ export class DaemonSession {
         const status = await this.hubRelationships.connect({
           hubUrl: msg.hubUrl,
           token: msg.token,
+          permissions: msg.permissions,
         });
         this.host.emit({
           type: "hub.management.daemon.connect.response",
+          payload: { requestId: msg.requestId, status },
+        });
+        return;
+      }
+      if (msg.type === "hub.management.daemon.permissions.update.request") {
+        const status = await this.hubRelationships.updatePermissions({
+          grant: msg.grant,
+          revoke: msg.revoke,
+        });
+        this.host.emit({
+          type: "hub.management.daemon.permissions.update.response",
           payload: { requestId: msg.requestId, status },
         });
         return;
@@ -272,6 +288,7 @@ export class DaemonSession {
         listWorkspaces: this.listWorkspaces,
         listProviderAvailability: this.listProviderAvailability,
         getWebSocketRuntimeMetrics: this.getWebSocketRuntimeMetrics,
+        getObservationMetrics: this.getObservationMetrics,
         logger: this.logger,
       });
       this.host.emit({

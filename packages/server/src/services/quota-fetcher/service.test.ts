@@ -981,7 +981,7 @@ describe("real provider usage fetchers", () => {
     fetchApi = mockFetch(
       new Map([
         [
-          "https://cli-chat-proxy.grok.com/v1/billing",
+          "https://cli-chat-proxy.grok.com/v1/billing?format=credits",
           () =>
             jsonResponse({
               config: { monthlyLimit: { val: 0 }, used: { val: 0 } },
@@ -1010,7 +1010,7 @@ describe("real provider usage fetchers", () => {
     fetchApi = mockFetch(
       new Map([
         [
-          "https://cli-chat-proxy.grok.com/v1/billing",
+          "https://cli-chat-proxy.grok.com/v1/billing?format=credits",
           () =>
             jsonResponse({
               config: {
@@ -1083,7 +1083,7 @@ describe("real provider usage fetchers", () => {
     fetchApi = mockFetch(
       new Map([
         [
-          "https://cli-chat-proxy.grok.com/v1/billing",
+          "https://cli-chat-proxy.grok.com/v1/billing?format=credits",
           () =>
             jsonResponse({
               config: { monthlyLimit: { val: 50 } },
@@ -1105,6 +1105,48 @@ describe("real provider usage fetchers", () => {
           limit: 50,
         }),
       ],
+    });
+  });
+
+  it("fetches Grok unified-billing usage as a weekly window", async () => {
+    process.env["GROK_API_KEY"] = "grok_test_token";
+    fetchApi = mockFetch(
+      new Map([
+        [
+          "https://cli-chat-proxy.grok.com/v1/billing?format=credits",
+          () =>
+            jsonResponse({
+              config: {
+                currentPeriod: {
+                  type: "USAGE_PERIOD_TYPE_WEEKLY",
+                  start: "2026-08-24T09:41:40.001370+00:00",
+                  end: "2026-08-31T09:41:40.001370+00:00",
+                },
+                creditUsagePercent: 76.0,
+                isUnifiedBillingUser: true,
+                billingPeriodStart: "2026-08-24T09:41:40.001370+00:00",
+                billingPeriodEnd: "2026-08-31T09:41:40.001370+00:00",
+              },
+            }),
+        ],
+      ]),
+    );
+
+    const grok = findProvider(await service().listUsage(), "grok");
+
+    expect(grok).toMatchObject({
+      status: "available",
+      windows: [
+        {
+          id: "weekly",
+          label: "Weekly",
+          usedPct: 76,
+          remainingPct: 24,
+          resetsAt: "2026-08-31T09:41:40.001370+00:00",
+          tone: "warning",
+        },
+      ],
+      balances: [],
     });
   });
 
@@ -1331,6 +1373,75 @@ describe("real provider usage fetchers", () => {
 
     expect(requestedUrl).toBe("https://api.minimaxi.com/v1/token_plan/remains");
     expect(miniMax.status).toBe("unavailable");
+  });
+
+  it("reports MiniMax accounts with no active token plan as unavailable", async () => {
+    writeMiniMaxConfig(homeDir, { api_key: "minimax_config_key", region: "cn" });
+    fetchApi = mockFetch(
+      new Map([
+        [
+          "https://api.minimaxi.com/v1/token_plan/remains",
+          () =>
+            jsonResponse({
+              model_remains: null,
+              base_resp: { status_code: 2062, status_msg: "no active token plan subscription" },
+            }),
+        ],
+      ]),
+    );
+
+    const miniMax = findProvider(await service().listUsage(), "minimax");
+
+    expect(miniMax).toMatchObject({ status: "unavailable", windows: [], error: null });
+  });
+
+  it("reports a null MiniMax token plan as unavailable even without base_resp", async () => {
+    process.env["MINIMAX_API_KEY"] = "minimax_test_token";
+    fetchApi = mockFetch(
+      new Map([
+        [
+          "https://api.minimax.io/v1/token_plan/remains",
+          () => jsonResponse({ model_remains: null }),
+        ],
+      ]),
+    );
+
+    const miniMax = findProvider(await service().listUsage(), "minimax");
+
+    expect(miniMax).toMatchObject({ status: "unavailable", windows: [], error: null });
+  });
+
+  it("still reads MiniMax windows when base_resp reports success", async () => {
+    process.env["MINIMAX_API_KEY"] = "minimax_test_token";
+    fetchApi = mockFetch(
+      new Map([
+        [
+          "https://api.minimax.io/v1/token_plan/remains",
+          () =>
+            jsonResponse({
+              base_resp: { status_code: 0, status_msg: "success" },
+              model_remains: [
+                {
+                  model_name: "MiniMax-M2.7",
+                  end_time: Date.parse("2026-06-19T05:00:00.000Z"),
+                  current_interval_total_count: 100,
+                  current_interval_usage_count: 25,
+                  current_interval_remaining_percent: 75,
+                },
+              ],
+            }),
+        ],
+      ]),
+    );
+
+    const miniMax = findProvider(await service().listUsage(), "minimax");
+
+    expect(miniMax).toMatchObject({
+      status: "available",
+      windows: expect.arrayContaining([
+        expect.objectContaining({ id: "interval_MiniMax-M2.7", usedPct: 25 }),
+      ]),
+    });
   });
 
   it("marks exhausted MiniMax interval windows with a danger tone", async () => {

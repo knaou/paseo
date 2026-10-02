@@ -5,10 +5,12 @@ import {
 import React from "react";
 import { forwardRef, useCallback, useEffect, useMemo, useRef } from "react";
 import type { ElementRef, ReactNode } from "react";
+import { systemBackPress } from "./back-press";
 import {
   type BottomSheetController,
   createBottomSheetVisibilityTracker,
 } from "./visibility-tracker";
+import { BottomSheetScope } from "@/components/ui/bottom-sheet-scope";
 
 type GorhomBottomSheetModalMethods = ElementRef<typeof GorhomBottomSheetModal>;
 
@@ -64,7 +66,7 @@ export const IsolatedBottomSheetModal = forwardRef<
       enableDismissOnClose
       stackBehavior={presentation}
     >
-      {contextBridge ? contextBridge(children) : children}
+      <BottomSheetScope>{contextBridge ? contextBridge(children) : children}</BottomSheetScope>
     </GorhomBottomSheetModal>
   );
 
@@ -84,7 +86,11 @@ export function useIsolatedBottomSheetVisibility({
   onCloseRef.current = onClose;
 
   const tracker = useMemo(
-    () => createBottomSheetVisibilityTracker({ onClose: () => onCloseRef.current() }),
+    () =>
+      createBottomSheetVisibilityTracker({
+        onClose: () => onCloseRef.current(),
+        backPress: systemBackPress,
+      }),
     [],
   );
 

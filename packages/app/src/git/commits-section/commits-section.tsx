@@ -1,10 +1,12 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Pressable, Text, View } from "react-native";
 import { StyleSheet } from "react-native-unistyles";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useTranslation } from "react-i18next";
 import { useRetainedPanelActive } from "@/components/retained-panel";
 import { useCheckoutCommitsQuery, type CheckoutCommitsQueryResult } from "@/git/use-commits-query";
 import { ThemedChevron, chevronColorMapping } from "@/git/themed-chevron";
+import { treeRowPaddingLeft } from "@/components/tree-primitives";
 import { normalizeBranchOptionName } from "@/utils/branch-suggestions";
 import { CommitRow } from "./commit-row";
 
@@ -91,6 +93,7 @@ export function CommitsSection({
   onCollapsedChange,
 }: CommitsSectionProps) {
   const { t } = useTranslation();
+  const insets = useSafeAreaInsets();
   const isPanelActive = useRetainedPanelActive();
   const [now, setNow] = useState(() => new Date());
   const displayNow = useMemo(() => (isPanelActive ? new Date() : now), [isPanelActive, now]);
@@ -119,6 +122,10 @@ export function CommitsSection({
     () => [styles.headerChevron, !collapsed && styles.headerChevronExpanded],
     [collapsed],
   );
+  const containerStyle = useMemo(
+    () => [styles.container, { paddingBottom: insets.bottom }],
+    [insets.bottom],
+  );
 
   if (query.status === "unsupported") {
     return null;
@@ -129,7 +136,7 @@ export function CommitsSection({
       : null;
 
   return (
-    <View style={styles.container}>
+    <View style={containerStyle}>
       <Pressable
         accessibilityRole="button"
         testID="commits-section-header"
@@ -169,7 +176,9 @@ const styles = StyleSheet.create((theme) => ({
     flexDirection: "row",
     alignItems: "center",
     gap: theme.spacing[2],
-    paddingLeft: theme.spacing[2],
+    // Same leading rail as a depth-0 tree row, so the disclosure chevron lines up
+    // with the folder chevrons above it.
+    paddingLeft: treeRowPaddingLeft(0),
     paddingRight: theme.spacing[3],
     paddingVertical: theme.spacing[2],
     flexShrink: 0,

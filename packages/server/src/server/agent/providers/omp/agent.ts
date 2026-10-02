@@ -69,7 +69,7 @@ export { formatOmpVersionSupport, resolveOmpDiagnosticPaths } from "./provider-c
 import { OmpSubagentCardTracker, type OmpSubagentCardScheduler } from "./subagent-card-tracker.js";
 import { shouldDisplayOmpCustomMessage } from "./custom-message.js";
 import { getUserMessageText } from "./message-history.js";
-import { mapOmpSystemNoticeToToolCall } from "./system-notice.js";
+import { mapOmpSystemNoticeToNotification } from "./system-notice.js";
 import { materializeProviderImage } from "../provider-image-output.js";
 import { OmpCliRuntime } from "./cli-runtime.js";
 import { listOmpImportableSessions, readOmpImportSessionConfig } from "./session-descriptor.js";
@@ -526,6 +526,11 @@ function latestOmpErrorMessage(messages: OmpAgentMessage[]): string | null {
   return formatOmpErrorMessage(latestAssistant);
 }
 
+function isOmpAbortedTerminalResponse(messages: OmpAgentMessage[]): boolean {
+  const latestAssistant = messages.findLast((message) => message.role === "assistant");
+  return latestAssistant?.stopReason?.toLowerCase() === "aborted";
+}
+
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value);
 }
@@ -563,6 +568,24 @@ function getInputQuestionTitle(title: string | undefined, placeholder: string | 
   return "Optional response";
 }
 
+interface OmpSelectOption {
+  label: string;
+  description?: string;
+}
+
+function readSelectOptions(options: unknown, optionDetails: unknown): OmpSelectOption[] {
+  const labels = readStringArray(options);
+  const details = Array.isArray(optionDetails) ? optionDetails : [];
+  return labels.map((label, index) => {
+    const detail = details[index];
+    const description =
+      isRecord(detail) && typeof detail.description === "string" && detail.description.trim() !== ""
+        ? detail.description
+        : undefined;
+    return description === undefined ? { label } : { label, description };
+  });
+}
+
 function readStringArray(value: unknown): string[] {
   return Array.isArray(value)
     ? value.filter((item): item is string => typeof item === "string")
@@ -581,7 +604,7 @@ function mapExtensionUiRequestToPermission(
   const label = options.label ?? "OMP";
   switch (event.method) {
     case "select": {
-      const selectOptions = readStringArray(event.options);
+      const selectOptions = readSelectOptions(event.options, event.optionDetails);
       if (options.combineOptionalComment) {
         return buildCombinedAskUserQuestionPermission(event, {
           provider,
@@ -628,7 +651,7 @@ function mapExtensionUiRequestToPermission(
         question: [optionalString(event.title), optionalString(event.message)]
           .filter(Boolean)
           .join("\n\n"),
-        options: ["Yes", "No"],
+        options: [{ label: "Yes" }, { label: "No" }],
         multiSelect: false,
       });
     default:
@@ -673,7 +696,7 @@ function buildExtensionUiQuestionPermission(
     provider: AgentProvider;
     label: string;
     question: string;
-    options: string[];
+    options: OmpSelectOption[];
     multiSelect: boolean;
     placeholder?: string;
     allowEmpty?: boolean;
@@ -691,7 +714,10 @@ function buildExtensionUiQuestionPermission(
         {
           question: input.question,
           header: QUESTION_RESPONSE_HEADER,
-          options: input.options.map((label) => ({ label })),
+          options: input.options.map((option) => ({
+            label: option.label,
+            ...(option.description === undefined ? {} : { description: option.description }),
+          })),
           multiSelect: input.multiSelect,
           ...(input.placeholder ? { placeholder: input.placeholder } : {}),
           ...(input.allowEmpty ? { allowEmpty: true } : {}),
@@ -712,11 +738,13 @@ function buildCombinedAskUserQuestionPermission(
     provider: AgentProvider;
     label: string;
     question: string;
-    options: string[];
+    options: OmpSelectOption[];
     allowFreeform: boolean;
   },
 ): AgentPermissionRequest {
-  const visibleOptions = input.options.filter((option) => !isOmpAskUserFreeformOption(option));
+  const visibleOptions = input.options.filter(
+    (option) => !isOmpAskUserFreeformOption(option.label),
+  );
   const allowOther = input.allowFreeform || visibleOptions.length !== input.options.length;
   return {
     id: event.id,
@@ -729,7 +757,10 @@ function buildCombinedAskUserQuestionPermission(
         {
           question: input.question,
           header: QUESTION_RESPONSE_HEADER,
-          options: visibleOptions.map((label) => ({ label })),
+          options: visibleOptions.map((option) => ({
+            label: option.label,
+            ...(option.description === undefined ? {} : { description: option.description }),
+          })),
           multiSelect: false,
           ...(allowOther ? { allowOther: true } : {}),
         },
@@ -748,7 +779,7 @@ function buildCombinedAskUserQuestionPermission(
       answerHeader: QUESTION_RESPONSE_HEADER,
       commentHeader: QUESTION_COMMENT_HEADER,
       combinedAskUser: COMBINED_ASK_USER_METADATA,
-      selectOptions: visibleOptions,
+      selectOptions: visibleOptions.map((option) => option.label),
       ...(allowOther ? { freeformSentinel: OMP_ASK_USER_FREEFORM_SENTINEL } : {}),
     },
   };
@@ -828,12 +859,15 @@ function buildExtensionUiResponse(
 function createRuntime(
   logger: Logger,
   runtimeSettings: ProviderRuntimeSettings | undefined,
+  providerParams: OmpRuntimeProviderParams,
 ): OmpRuntime {
   return new OmpCliRuntime({
     logger,
     runtimeSettings,
     command: ["omp"],
     commandsRpcName: "get_available_commands",
+    readyTimeoutMs: providerParams.readyTimeoutMs,
+    requestTimeoutMs: providerParams.rpcTimeoutMs,
   });
 }
 
@@ -2016,7 +2050,7 @@ export class OmpAgentSession implements AgentSession {
         if (text) {
           const item =
             mapOmpAdvisorMessageToToolCall(event.message, text) ??
-            mapOmpSystemNoticeToToolCall(text);
+            mapOmpSystemNoticeToNotification(text);
           this.emit({
             type: "timeline",
             provider: this.provider,
@@ -2024,9 +2058,6 @@ export class OmpAgentSession implements AgentSession {
             item: item ?? { type: "assistant_message", text },
           });
         }
-      }
-      if (!this.activeTurnHasUserMessage) {
-        this.completeTurn(turnId, []);
       }
       return;
     }
@@ -2130,6 +2161,19 @@ export class OmpAgentSession implements AgentSession {
     this.activeTurnStarted = false;
     this.activeTurnHasUserMessage = false;
     this.clearNoTurnBuffers();
+    // OMP reports a stopped turn as a terminal response carrying its interrupt
+    // text as an error. That is the user's own Stop, not a failed turn.
+    if (isOmpAbortedTerminalResponse(messages)) {
+      this.usagePoller.stopTurn();
+      this.terminalizeActiveWork();
+      this.emit({
+        type: "turn_canceled",
+        provider: this.provider,
+        turnId,
+        reason: "interrupted",
+      });
+      return;
+    }
     const errorMessage = latestOmpErrorMessage(messages);
     if (typeof errorMessage === "string" && errorMessage.length > 0) {
       this.usagePoller.stopTurn();
@@ -2158,6 +2202,10 @@ export class OmpAgentSession implements AgentSession {
       try {
         const state = await this.runtimeSession.getState();
         this.state = state;
+        if (this.closed || !this.activeTurnStarted || this.currentTurnIdForEvent() !== turnId) {
+          // An interrupt settled this turn while the state check was in flight.
+          return;
+        }
         if (!state.isStreaming && !state.isCompacting) {
           this.completeTurn(turnId, messages);
           return;
@@ -2213,7 +2261,8 @@ export class OmpAgentClient implements AgentClient {
     this.providerIdleScheduler = options.providerIdleScheduler;
     this.noTurnScheduler = options.noTurnScheduler;
     this.usagePollScheduler = options.usagePollScheduler;
-    this.runtime = options.runtime ?? createRuntime(options.logger, runtimeSettings);
+    this.runtime =
+      options.runtime ?? createRuntime(options.logger, runtimeSettings, this.providerParams);
   }
 
   private async configureNativePaseoTools(

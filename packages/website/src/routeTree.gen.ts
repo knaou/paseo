@@ -10,6 +10,7 @@
 
 import { Route as rootRouteImport } from "./routes/__root";
 import { Route as VtcodeRouteImport } from "./routes/vtcode";
+import { Route as TermsRouteImport } from "./routes/terms";
 import { Route as StakpakRouteImport } from "./routes/stakpak";
 import { Route as SponsorRouteImport } from "./routes/sponsor";
 import { Route as SigitRouteImport } from "./routes/sigit";
@@ -62,6 +63,7 @@ import { Route as BlogIndexRouteImport } from "./routes/blog/index";
 import { Route as DocsSplatRouteImport } from "./routes/docs/$";
 import { Route as BlogSplatRouteImport } from "./routes/blog/$";
 import { Route as AlternativesSupersetRouteImport } from "./routes/alternatives/superset";
+import { Route as AlternativesOrcaRouteImport } from "./routes/alternatives/orca";
 import { Route as AlternativesOpencodeDesktopRouteImport } from "./routes/alternatives/opencode-desktop";
 import { Route as AlternativesOpenchamberRouteImport } from "./routes/alternatives/openchamber";
 import { Route as AlternativesHappyCoderRouteImport } from "./routes/alternatives/happy-coder";
@@ -72,6 +74,11 @@ import { Route as AlternativesClaudeDesktopRouteImport } from "./routes/alternat
 const VtcodeRoute = VtcodeRouteImport.update({
   id: "/vtcode",
   path: "/vtcode",
+  getParentRoute: () => rootRouteImport,
+} as any);
+const TermsRoute = TermsRouteImport.update({
+  id: "/terms",
+  path: "/terms",
   getParentRoute: () => rootRouteImport,
 } as any);
 const StakpakRoute = StakpakRouteImport.update({
@@ -334,6 +341,11 @@ const AlternativesSupersetRoute = AlternativesSupersetRouteImport.update({
   path: "/alternatives/superset",
   getParentRoute: () => rootRouteImport,
 } as any);
+const AlternativesOrcaRoute = AlternativesOrcaRouteImport.update({
+  id: "/alternatives/orca",
+  path: "/alternatives/orca",
+  getParentRoute: () => rootRouteImport,
+} as any);
 const AlternativesOpencodeDesktopRoute =
   AlternativesOpencodeDesktopRouteImport.update({
     id: "/alternatives/opencode-desktop",
@@ -415,6 +427,7 @@ export interface FileRoutesByFullPath {
   "/sigit": typeof SigitRoute;
   "/sponsor": typeof SponsorRoute;
   "/stakpak": typeof StakpakRoute;
+  "/terms": typeof TermsRoute;
   "/vtcode": typeof VtcodeRoute;
   "/alternatives/claude-desktop": typeof AlternativesClaudeDesktopRoute;
   "/alternatives/codex-app": typeof AlternativesCodexAppRoute;
@@ -422,6 +435,7 @@ export interface FileRoutesByFullPath {
   "/alternatives/happy-coder": typeof AlternativesHappyCoderRoute;
   "/alternatives/openchamber": typeof AlternativesOpenchamberRoute;
   "/alternatives/opencode-desktop": typeof AlternativesOpencodeDesktopRoute;
+  "/alternatives/orca": typeof AlternativesOrcaRoute;
   "/alternatives/superset": typeof AlternativesSupersetRoute;
   "/blog/$": typeof BlogSplatRoute;
   "/docs/$": typeof DocsSplatRoute;
@@ -474,6 +488,7 @@ export interface FileRoutesByTo {
   "/sigit": typeof SigitRoute;
   "/sponsor": typeof SponsorRoute;
   "/stakpak": typeof StakpakRoute;
+  "/terms": typeof TermsRoute;
   "/vtcode": typeof VtcodeRoute;
   "/alternatives/claude-desktop": typeof AlternativesClaudeDesktopRoute;
   "/alternatives/codex-app": typeof AlternativesCodexAppRoute;
@@ -481,6 +496,7 @@ export interface FileRoutesByTo {
   "/alternatives/happy-coder": typeof AlternativesHappyCoderRoute;
   "/alternatives/openchamber": typeof AlternativesOpenchamberRoute;
   "/alternatives/opencode-desktop": typeof AlternativesOpencodeDesktopRoute;
+  "/alternatives/orca": typeof AlternativesOrcaRoute;
   "/alternatives/superset": typeof AlternativesSupersetRoute;
   "/blog/$": typeof BlogSplatRoute;
   "/docs/$": typeof DocsSplatRoute;
@@ -536,6 +552,7 @@ export interface FileRoutesById {
   "/sigit": typeof SigitRoute;
   "/sponsor": typeof SponsorRoute;
   "/stakpak": typeof StakpakRoute;
+  "/terms": typeof TermsRoute;
   "/vtcode": typeof VtcodeRoute;
   "/alternatives/claude-desktop": typeof AlternativesClaudeDesktopRoute;
   "/alternatives/codex-app": typeof AlternativesCodexAppRoute;
@@ -543,6 +560,7 @@ export interface FileRoutesById {
   "/alternatives/happy-coder": typeof AlternativesHappyCoderRoute;
   "/alternatives/openchamber": typeof AlternativesOpenchamberRoute;
   "/alternatives/opencode-desktop": typeof AlternativesOpencodeDesktopRoute;
+  "/alternatives/orca": typeof AlternativesOrcaRoute;
   "/alternatives/superset": typeof AlternativesSupersetRoute;
   "/blog/$": typeof BlogSplatRoute;
   "/docs/$": typeof DocsSplatRoute;
@@ -599,6 +617,7 @@ export interface FileRouteTypes {
     | "/sigit"
     | "/sponsor"
     | "/stakpak"
+    | "/terms"
     | "/vtcode"
     | "/alternatives/claude-desktop"
     | "/alternatives/codex-app"
@@ -606,6 +625,7 @@ export interface FileRouteTypes {
     | "/alternatives/happy-coder"
     | "/alternatives/openchamber"
     | "/alternatives/opencode-desktop"
+    | "/alternatives/orca"
     | "/alternatives/superset"
     | "/blog/$"
     | "/docs/$"
@@ -658,6 +678,7 @@ export interface FileRouteTypes {
     | "/sigit"
     | "/sponsor"
     | "/stakpak"
+    | "/terms"
     | "/vtcode"
     | "/alternatives/claude-desktop"
     | "/alternatives/codex-app"
@@ -665,6 +686,7 @@ export interface FileRouteTypes {
     | "/alternatives/happy-coder"
     | "/alternatives/openchamber"
     | "/alternatives/opencode-desktop"
+    | "/alternatives/orca"
     | "/alternatives/superset"
     | "/blog/$"
     | "/docs/$"
@@ -719,6 +741,7 @@ export interface FileRouteTypes {
     | "/sigit"
     | "/sponsor"
     | "/stakpak"
+    | "/terms"
     | "/vtcode"
     | "/alternatives/claude-desktop"
     | "/alternatives/codex-app"
@@ -726,6 +749,7 @@ export interface FileRouteTypes {
     | "/alternatives/happy-coder"
     | "/alternatives/openchamber"
     | "/alternatives/opencode-desktop"
+    | "/alternatives/orca"
     | "/alternatives/superset"
     | "/blog/$"
     | "/docs/$"
@@ -781,6 +805,7 @@ export interface RootRouteChildren {
   SigitRoute: typeof SigitRoute;
   SponsorRoute: typeof SponsorRoute;
   StakpakRoute: typeof StakpakRoute;
+  TermsRoute: typeof TermsRoute;
   VtcodeRoute: typeof VtcodeRoute;
   AlternativesClaudeDesktopRoute: typeof AlternativesClaudeDesktopRoute;
   AlternativesCodexAppRoute: typeof AlternativesCodexAppRoute;
@@ -788,6 +813,7 @@ export interface RootRouteChildren {
   AlternativesHappyCoderRoute: typeof AlternativesHappyCoderRoute;
   AlternativesOpenchamberRoute: typeof AlternativesOpenchamberRoute;
   AlternativesOpencodeDesktopRoute: typeof AlternativesOpencodeDesktopRoute;
+  AlternativesOrcaRoute: typeof AlternativesOrcaRoute;
   AlternativesSupersetRoute: typeof AlternativesSupersetRoute;
 }
 
@@ -798,6 +824,13 @@ declare module "@tanstack/react-router" {
       path: "/vtcode";
       fullPath: "/vtcode";
       preLoaderRoute: typeof VtcodeRouteImport;
+      parentRoute: typeof rootRouteImport;
+    };
+    "/terms": {
+      id: "/terms";
+      path: "/terms";
+      fullPath: "/terms";
+      preLoaderRoute: typeof TermsRouteImport;
       parentRoute: typeof rootRouteImport;
     };
     "/stakpak": {
@@ -1164,6 +1197,13 @@ declare module "@tanstack/react-router" {
       preLoaderRoute: typeof AlternativesSupersetRouteImport;
       parentRoute: typeof rootRouteImport;
     };
+    "/alternatives/orca": {
+      id: "/alternatives/orca";
+      path: "/alternatives/orca";
+      fullPath: "/alternatives/orca";
+      preLoaderRoute: typeof AlternativesOrcaRouteImport;
+      parentRoute: typeof rootRouteImport;
+    };
     "/alternatives/opencode-desktop": {
       id: "/alternatives/opencode-desktop";
       path: "/alternatives/opencode-desktop";
@@ -1281,6 +1321,7 @@ const rootRouteChildren: RootRouteChildren = {
   SigitRoute: SigitRoute,
   SponsorRoute: SponsorRoute,
   StakpakRoute: StakpakRoute,
+  TermsRoute: TermsRoute,
   VtcodeRoute: VtcodeRoute,
   AlternativesClaudeDesktopRoute: AlternativesClaudeDesktopRoute,
   AlternativesCodexAppRoute: AlternativesCodexAppRoute,
@@ -1288,6 +1329,7 @@ const rootRouteChildren: RootRouteChildren = {
   AlternativesHappyCoderRoute: AlternativesHappyCoderRoute,
   AlternativesOpenchamberRoute: AlternativesOpenchamberRoute,
   AlternativesOpencodeDesktopRoute: AlternativesOpencodeDesktopRoute,
+  AlternativesOrcaRoute: AlternativesOrcaRoute,
   AlternativesSupersetRoute: AlternativesSupersetRoute,
 };
 export const routeTree = rootRouteImport

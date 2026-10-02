@@ -5,7 +5,7 @@ import { StyleSheet } from "react-native-unistyles";
 import { Alert } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { settingsStyles } from "@/styles/settings";
-import { SettingsSection } from "@/screens/settings/settings-section";
+import { SettingsSection } from "@/components/settings/headings/settings-section";
 import { providerUsageCopy } from "./copy";
 import { ProviderUsageList } from "./list";
 import type { ProviderUsageView } from "./types";
@@ -63,7 +63,12 @@ function ProviderUsageBody({
 
   if (view.kind === "error") {
     return (
-      <Alert variant="error" title={providerUsageCopy.errorTitle} description={view.message}>
+      <Alert
+        size="sm"
+        variant="error"
+        title={providerUsageCopy.errorTitle}
+        description={view.message}
+      >
         <Button variant="outline" size="sm" onPress={onRefresh}>
           {providerUsageCopy.retry}
         </Button>

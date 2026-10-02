@@ -129,9 +129,9 @@ second line'`,
 
     const result = curateAgentActivity(timeline);
 
-    expect(result).toContain("[Exec Command]");
-    expect(result).toContain("[Read File]");
-    expect(result).toContain("[Web Search]");
+    expect(result).toContain("[Exec command]");
+    expect(result).toContain("[Read file]");
+    expect(result).toContain("[Web search]");
     expect(result).not.toContain("npm run lint");
     expect(result).not.toContain("src/index.ts");
     expect(result).not.toContain("zod union");
@@ -354,46 +354,44 @@ second line'`,
     expect(result.attachment.text).toContain("[Assistant] Done.");
   });
 
-  it("selects the fork boundary before collapsing later tool updates", () => {
-    const result = buildAgentForkContextAttachment({
-      boundaryMessageId: "assistant-1",
-      rows: [
-        row(1, { type: "user_message", text: "Run it", messageId: "user-1" }),
-        row(
-          2,
-          toolCallItem({
-            callId: "terminal-1",
-            name: "terminal",
-            status: "running",
-            detail: {
-              type: "plain_text",
-              label: "before boundary",
-            },
+  it("rejects a checkpoint whose projected tool state changed later", () => {
+    expect(() =>
+      buildAgentForkContextAttachment({
+        boundaryMessageId: "assistant-1",
+        rows: [
+          row(1, { type: "user_message", text: "Run it", messageId: "user-1" }),
+          row(
+            2,
+            toolCallItem({
+              callId: "terminal-1",
+              name: "terminal",
+              status: "running",
+              detail: {
+                type: "plain_text",
+                label: "before boundary",
+              },
+            }),
+          ),
+          row(3, {
+            type: "assistant_message",
+            text: "Partial result.",
+            messageId: "assistant-1",
           }),
-        ),
-        row(3, {
-          type: "assistant_message",
-          text: "Partial result.",
-          messageId: "assistant-1",
-        }),
-        row(
-          4,
-          toolCallItem({
-            callId: "terminal-1",
-            name: "terminal",
-            status: "completed",
-            detail: {
-              type: "plain_text",
-              label: "after boundary",
-            },
-          }),
-        ),
-      ],
-    });
-
-    expect(result.attachment.text).toContain("[Terminal] before boundary");
-    expect(result.attachment.text).toContain("[Assistant] Partial result.");
-    expect(result.attachment.text).not.toContain("after boundary");
+          row(
+            4,
+            toolCallItem({
+              callId: "terminal-1",
+              name: "terminal",
+              status: "completed",
+              detail: {
+                type: "plain_text",
+                label: "after boundary",
+              },
+            }),
+          ),
+        ],
+      }),
+    ).toThrow("Fork from a later completed response");
   });
 
   it("selects a synthetic assistant error by its timeline cursor", () => {

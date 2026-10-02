@@ -338,7 +338,7 @@ async function waitForHttpOk(url) {
 async function verifyPublishedInstall({ scope, version, tempDir, env }) {
   const prefix = path.join(tempDir, "verify-install");
   const cliAlias = `${SOURCE_SCOPE}/cli@npm:${privatePackageName(scope, "cli")}@${version}`;
-  run("npm", ["install", "--global", "--prefix", prefix, cliAlias], { env });
+  run("npm", ["install", "--global", "--prefix", prefix, "--legacy-peer-deps", cliAlias], { env });
 
   const globalRoot = npmGlobalRoot(prefix, env);
   const cliPath = path.join(globalRoot, SOURCE_SCOPE, "cli", "bin", "paseo");
@@ -349,23 +349,20 @@ async function verifyPublishedInstall({ scope, version, tempDir, env }) {
   let started = false;
   let verificationError = null;
   try {
-    run(
-      process.execPath,
-      [
-        cliPath,
-        "daemon",
-        "start",
-        "--home",
-        home,
-        "--port",
-        String(port),
-        "--no-relay",
-        "--no-mcp",
-        "--no-inject-mcp",
-        "--web-ui",
-      ],
-      { env },
-    );
+    for (const [key, value] of Object.entries({
+      "daemon.listen": `127.0.0.1:${port}`,
+      "daemon.relay.enabled": false,
+      "daemon.mcp.enabled": false,
+      "daemon.mcp.injectIntoAgents": false,
+      "features.webUi.enabled": true,
+    })) {
+      run(
+        process.execPath,
+        [cliPath, "daemon", "config", "set", key, JSON.stringify(value), "--home", home],
+        { env },
+      );
+    }
+    run(process.execPath, [cliPath, "daemon", "start", "--home", home], { env });
     started = true;
     await waitForHttpOk(`http://127.0.0.1:${port}/api/health`);
     await waitForHttpOk(`http://127.0.0.1:${port}/`);
