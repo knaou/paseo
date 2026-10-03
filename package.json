@@ -45,7 +45,7 @@
     "dev:website": "npm run dev --workspace=@getpaseo/website",
     "postinstall": "node scripts/postinstall-patches.mjs",
     "prepare": "lefthook install --force",
-    "build": "npm run build --workspaces --if-present",
+    "build": "npm run build:server && npm run build --workspace=@getpaseo/app && npm run build --workspace=@getpaseo/website && npm run build:main --workspace=@getpaseo/desktop",
     "build:highlight": "npm run build --workspace=@getpaseo/highlight",
     "build:highlight:clean": "npm run build:clean --workspace=@getpaseo/highlight",
     "build:plugin": "npm run build --workspace=@getpaseo/plugin",

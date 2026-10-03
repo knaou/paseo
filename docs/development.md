@@ -497,6 +497,12 @@ Package imports resolve through package exports to compiled `dist/` output, not 
 
 Use the named root build targets instead of remembering workspace dependency chains:
 
+`npm run build` builds the server stack before the app, website, and desktop main process.
+Do not replace it with `npm run build --workspaces`: npm uses the workspace list order,
+which does not follow build dependencies and fails when sibling `dist/` outputs are absent.
+Use `npm run build:desktop` to generate desktop installers. On Linux, the RPM target
+requires `rpmbuild`; the normal root build does not run installer packaging.
+
 ```bash
 npm run build:client       # protocol -> client
 npm run build:server-deps  # highlight -> relay -> protocol -> client
