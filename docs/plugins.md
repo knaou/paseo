@@ -497,6 +497,19 @@ Register a usage source from `index.server.ts` with `server.registerUsageSource(
 
 The daemon calls discovery for `usage.list_reports`; the client gates this RPC on `server_info.features.usageSources`. The old `provider.usage.list` RPC maps discovered reports for older clients.
 
+Antigravity usage reads the CLI's `~/.gemini/antigravity-cli/antigravity-oauth-token`
+file. Keyring-only logins are not discovered. To refresh consumer tokens, set
+`ANTIGRAVITY_OAUTH_CLIENT_ID` and `ANTIGRAVITY_OAUTH_CLIENT_SECRET` in the environment
+that starts the Paseo daemon. Use the OAuth client associated with the CLI login;
+an unrelated client cannot refresh its token. Keep the values outside the repository.
+Without both variables, usage works until the stored access token needs renewal,
+then reports the missing settings. You can also renew the login with `agy`.
+Refreshed tokens stay in memory; the plugin never rewrites the CLI's credentials.
+The quota API requires Antigravity
+client identification and the project from `loadCodeAssist`; a generic authenticated
+request can return 403. Keep the API's quota groups together: models in a group share
+one limit, so per-model cards would duplicate the same remaining allowance.
+
 ## Contribute sidebar items
 
 Sidebar header and footer items are plugin components, not descriptors. The
