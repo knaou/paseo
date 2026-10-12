@@ -2,7 +2,7 @@
 
 Paseo is a mobile app for monitoring and controlling your local AI coding agents from anywhere. Your dev environment, in your pocket. Connects directly to your actual development environment — your code stays on your machine.
 
-**Supported agents:** Claude Code, Codex, GitHub Copilot, OpenCode, and Pi.
+**Supported agents:** Claude Code, Codex, GitHub Copilot, OpenCode, Pi, Antigravity, and Muse Code.
 
 ## Fork maintenance
 
@@ -10,14 +10,15 @@ Paseo is a mobile app for monitoring and controlling your local AI coding agents
 - "Follow the latest release" means the latest published stable upstream release. Resolve it with `gh api repos/getpaseo/paseo/releases/latest`; use its exact tag and commit rather than upstream `main` or a prerelease.
 - Check `git status`, `git branch -vv`, and `git worktree list` before updating. Worktrees can start from older fork refs: the October 2026 update started on `fearless-albatross` at v0.5.2, while local `temporary` already carried a v0.9.1 update. Compare fork-only commits on relevant branches before choosing the integration base; branch names and backup refs do not establish the current release.
 - Fetch the selected tag without changing fork remotes or colliding with fork tags: `git fetch --no-tags https://github.com/getpaseo/paseo.git refs/tags/<tag>:refs/remotes/upstream-release/<tag>`. Integrate that ref while retaining fork changes. Without explicit commit authorization, use `git merge --no-commit --no-ff` and leave the resolved result for review.
-- Preserve the fork's Junie and OpenCode Go quota providers, Z.AI quota changes, unavailable-provider summary, Node version pin, and private npm distribution support. Upstream daemon lifecycle refactors can require adapting private package runner resolution and migrating its tests.
+- Since v0.11, usage sources are plugins under `plugins/*-usage-source/`, registered in `packages/server/src/server/plugins/builtin/index.ts`; the server build copies `plugins/` into `dist/server/builtin-plugins`. The fork carries `plugins/junie-usage-source` (fork-only), the Z.AI quota-endpoint credit windows and web-search balance in `plugins/zai-usage-source`, and the OpenCode Go browser User-Agent plus rate-limited danger tone in `plugins/opencode-go-usage-source`. The fork's old unavailable-provider summary was superseded by upstream's per-card unavailability reasons.
+- Preserve the fork's Node version pin and private npm distribution support. Upstream daemon lifecycle refactors can require adapting private package runner resolution and migrating its tests.
 - Private packages use `@knaou/paseo-*`, installed through `@getpaseo/*` npm aliases. Keep private daemon version detection and the public self-update block; private installations are updated manually. `Makefile` and `scripts/publish-private-npm.mjs` own this distribution path. Keep the `make push` alias and the isolated install's `--legacy-peer-deps` option from the v0.9.1 fork update. Update the Makefile version/examples to `<upstream-version>-knaou.1`; source workspace versions stay at the upstream release version. Existing published versions are immutable.
 - Since v0.10.3, configure daemon options with `paseo daemon config set <path> <value> --home <path>` before `paseo daemon start --home <path>`. Old launch flags such as `--port`, `--web-ui`, and `--no-relay` are rejected. Keep the private publisher's isolated installation verification aligned with this CLI contract.
 - Release-following work does not authorize publishing. Do not run `release:*`, publish private packages, push release tags, or restart the production daemon as part of source synchronization.
 - After integration, install the lockfile dependencies, rebuild workspace declarations with `npm run build:server` and `npm run build:app-deps`, then run typecheck, lint, and focused fork regression tests. Review the final diff against the selected upstream release to catch lost fork changes.
 - If the fork's lockfile differences are only npm peer metadata, keep the selected release's lockfile and matching `nix/npm-deps.hash` together.
-- Last selected upstream release: **v0.10.3**, commit `b4af508e2` (published 2026-10-02). Re-query GitHub on every request; this records the baseline, not a permanent target.
-- At v0.10.3, the upload assertion in `packages/server/src/server/daemon-client.e2e.test.ts` expects a request-derived ID while the unchanged upstream implementation generates a UUID. Report this baseline failure separately from fork regression results; the private self-update E2E passes when selected with `-t 'does not advertise npm self-update'`.
+- Last selected upstream release: **v0.11.2**, commit `759532509` (published 2026-10-09). Re-query GitHub on every request; this records the baseline, not a permanent target.
+- At v0.10.3 through v0.11.2, the upload assertion in `packages/server/src/server/daemon-client.e2e.test.ts` expects a request-derived ID while the unchanged upstream implementation generates a UUID. Report this baseline failure separately from fork regression results; the private self-update E2E passes when selected with `-t 'does not advertise npm self-update'`.
 - `AGENTS.md` is a tracked symlink to `CLAUDE.md`. Edit `CLAUDE.md` to update these instructions and preserve the symlink.
 
 ## Repository map

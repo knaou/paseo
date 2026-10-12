@@ -1,7 +1,7 @@
 .PHONY: server web build-push push
 
 PRIVATE_NPM_SCOPE := @knaou
-VERSION=0.10.3-knaou.1
+VERSION=0.11.2-knaou.1
 
 # Start the development daemon on 127.0.0.1:6768.
 server:
@@ -19,21 +19,21 @@ web:
 #   3. After the first publish, confirm each GitHub Package remains Private.
 #
 # Publish a new immutable version:
-#   make build-push VERSION=0.10.3-knaou.1
+#   make build-push VERSION=0.11.2-knaou.1
 #   Private prereleases are published under the `knaou` dist-tag.
 #
 # Consumer setup, once per machine:
 #   npm login --scope=@knaou --auth-type=legacy --registry=https://npm.pkg.github.com
 #
 # Consumer install and start:
-#   npm install -g '@getpaseo/cli@npm:@knaou/paseo-cli@0.10.3-knaou.1'
+#   npm install -g '@getpaseo/cli@npm:@knaou/paseo-cli@0.11.2-knaou.1'
 #   npm install -g @openai/codex opencode-ai # Install only the agent CLIs you use.
 #   paseo daemon config set features.webUi.enabled true
 #   paseo daemon start
 #
 # Update manually with a newly published version:
 #   paseo daemon stop
-#   npm install -g '@getpaseo/cli@npm:@knaou/paseo-cli@0.10.3-knaou.2'
+#   npm install -g '@getpaseo/cli@npm:@knaou/paseo-cli@0.11.2-knaou.2'
 #   paseo daemon start
 #
 # Do not use `npm run release:*` or push a v* tag for this path. Those run the
